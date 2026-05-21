@@ -1,0 +1,30 @@
+# Core RAG stack — all free, no paid APIs
+# Tested on Python 3.10+
+
+# Text extraction
+pdfplumber==0.11.4
+beautifulsoup4==4.12.3
+lxml==5.2.2
+
+# Chunking
+langchain==0.2.16
+langchain-community==0.2.16
+langchain-text-splitters==0.2.4
+
+# Embeddings (CPU-only, no GPU required)
+sentence-transformers==3.1.1
+
+# Vector store
+chromadb==0.5.15
+
+# LLM via Ollama
+ollama==0.3.3
+
+# Frontend
+streamlit==1.38.0
+
+# Utilities
+requests==2.32.3
+tqdm==4.66.5
+pandas==2.2.3
+python-dotenv==1.0.1
