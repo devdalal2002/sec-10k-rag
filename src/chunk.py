@@ -24,11 +24,16 @@ YEARS = [2022, 2023, 2024]
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 150
 MIN_SECTION_CHARS = 200
+MIN_CHUNK_CHARS = 100  # below one sentence, no retrievable content
 
 _splitter = RecursiveCharacterTextSplitter(
     chunk_size=CHUNK_SIZE,
     chunk_overlap=CHUNK_OVERLAP,
     length_function=len,
+    # Explicit separator hierarchy: prefer paragraph > sentence > word > char.
+    # Adding ". " lets the merge step respect sentence boundaries before
+    # falling back to word splits, reducing sub-sentence tail fragments.
+    separators=["\n\n", "\n", ". ", " ", ""],
 )
 
 
@@ -68,6 +73,11 @@ def chunk_recursive(filing: dict) -> list[dict]:
 
         sid, stitle = _section_for_pos(max(chunk_pos, 0), offsets)
 
+        if len(text) < MIN_CHUNK_CHARS:
+            if chunk_pos >= 0:
+                search_from = chunk_pos + max(1, len(text) - CHUNK_OVERLAP)
+            continue
+
         chunks.append({
             "chunk_id": f"{filing['ticker']}_{filing['fiscal_year']}_recursive_{idx:04d}",
             "ticker": filing["ticker"],
@@ -102,6 +112,9 @@ def chunk_section_aware(filing: dict) -> list[dict]:
         raw = [text] if section["char_count"] <= CHUNK_SIZE else _splitter.split_text(text)
 
         for raw_chunk in raw:
+            if len(raw_chunk) < MIN_CHUNK_CHARS:
+                continue
+
             # Non-negotiable: every chunk must be a substring of this section's text
             assert text.find(raw_chunk[:100]) != -1, (
                 f"Cross-section chunk detected in {sid} "
