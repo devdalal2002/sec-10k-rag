@@ -1,0 +1,31 @@
+ticker,company_name,fiscal_year,filing_date,url,file_path,file_size_bytes
+AAPL,Apple,2022,2022-10-28,https://www.sec.gov/Archives/edgar/data/320193/000032019322000108/aapl-20220924.htm,data\raw\AAPL\2022.html,2049857
+AAPL,Apple,2023,2023-11-03,https://www.sec.gov/Archives/edgar/data/320193/000032019323000106/aapl-20230930.htm,data\raw\AAPL\2023.html,1558924
+AAPL,Apple,2024,2024-11-01,https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm,data\raw\AAPL\2024.html,1503780
+MSFT,Microsoft,2022,2022-07-28,https://www.sec.gov/Archives/edgar/data/789019/000156459022026876/msft-10k_20220630.htm,data\raw\MSFT\2022.html,6215855
+MSFT,Microsoft,2023,2023-07-27,https://www.sec.gov/Archives/edgar/data/789019/000095017023035122/msft-20230630.htm,data\raw\MSFT\2023.html,9963591
+MSFT,Microsoft,2024,2024-07-30,https://www.sec.gov/Archives/edgar/data/789019/000095017024087843/msft-20240630.htm,data\raw\MSFT\2024.html,6860911
+NVDA,Nvidia,2022,2022-03-18,https://www.sec.gov/Archives/edgar/data/1045810/000104581022000036/nvda-20220130.htm,data\raw\NVDA\2022.html,2548428
+NVDA,Nvidia,2023,2023-02-24,https://www.sec.gov/Archives/edgar/data/1045810/000104581023000017/nvda-20230129.htm,data\raw\NVDA\2023.html,2669239
+NVDA,Nvidia,2024,2024-02-21,https://www.sec.gov/Archives/edgar/data/1045810/000104581024000029/nvda-20240128.htm,data\raw\NVDA\2024.html,2085566
+META,Meta,2022,2023-02-02,https://www.sec.gov/Archives/edgar/data/1326801/000132680123000013/meta-20221231.htm,data\raw\META\2022.html,2880995
+META,Meta,2023,2024-02-02,https://www.sec.gov/Archives/edgar/data/1326801/000132680124000012/meta-20231231.htm,data\raw\META\2023.html,2465661
+META,Meta,2024,2025-01-30,https://www.sec.gov/Archives/edgar/data/1326801/000132680125000017/meta-20241231.htm,data\raw\META\2024.html,2369769
+GOOGL,Alphabet,2022,2023-02-03,https://www.sec.gov/Archives/edgar/data/1652044/000165204423000016/goog-20221231.htm,data\raw\GOOGL\2022.html,3038413
+GOOGL,Alphabet,2023,2024-01-31,https://www.sec.gov/Archives/edgar/data/1652044/000165204424000022/goog-20231231.htm,data\raw\GOOGL\2023.html,2410403
+GOOGL,Alphabet,2024,2025-02-05,https://www.sec.gov/Archives/edgar/data/1652044/000165204425000014/goog-20241231.htm,data\raw\GOOGL\2024.html,2528344
+AMZN,Amazon,2022,2023-02-03,https://www.sec.gov/Archives/edgar/data/1018724/000101872423000004/amzn-20221231.htm,data\raw\AMZN\2022.html,2486192
+AMZN,Amazon,2023,2024-02-02,https://www.sec.gov/Archives/edgar/data/1018724/000101872424000008/amzn-20231231.htm,data\raw\AMZN\2023.html,1945178
+AMZN,Amazon,2024,2025-02-07,https://www.sec.gov/Archives/edgar/data/1018724/000101872425000004/amzn-20241231.htm,data\raw\AMZN\2024.html,1922355
+JPM,JPMorgan Chase,2022,2023-02-21,https://www.sec.gov/Archives/edgar/data/19617/000001961723000231/jpm-20221231.htm,data\raw\JPM\2022.html,15882897
+JPM,JPMorgan Chase,2023,2024-02-16,https://www.sec.gov/Archives/edgar/data/19617/000001961724000225/jpm-20231231.htm,data\raw\JPM\2023.html,13211658
+JPM,JPMorgan Chase,2024,2025-02-14,https://www.sec.gov/Archives/edgar/data/19617/000001961725000270/jpm-20241231.htm,data\raw\JPM\2024.html,12849180
+GS,Goldman Sachs,2022,2023-02-24,https://www.sec.gov/Archives/edgar/data/886982/000088698223000003/gs-20221231.htm,data\raw\GS\2022.html,12826567
+GS,Goldman Sachs,2023,2024-02-23,https://www.sec.gov/Archives/edgar/data/886982/000088698224000006/gs-20231231.htm,data\raw\GS\2023.html,10095489
+GS,Goldman Sachs,2024,2025-02-27,https://www.sec.gov/Archives/edgar/data/886982/000088698225000005/gs-20241231.htm,data\raw\GS\2024.html,10084107
+WMT,Walmart,2022,2022-03-18,https://www.sec.gov/Archives/edgar/data/104169/000010416922000012/wmt-20220131.htm,data\raw\WMT\2022.html,3092737
+WMT,Walmart,2023,2023-03-17,https://www.sec.gov/Archives/edgar/data/104169/000010416923000020/wmt-20230131.htm,data\raw\WMT\2023.html,2594628
+WMT,Walmart,2024,2024-03-15,https://www.sec.gov/Archives/edgar/data/104169/000010416924000056/wmt-20240131.htm,data\raw\WMT\2024.html,2323877
+TSLA,Tesla,2022,2023-01-31,https://www.sec.gov/Archives/edgar/data/1318605/000095017023001409/tsla-20221231.htm,data\raw\TSLA\2022.html,7964288
+TSLA,Tesla,2023,2024-01-29,https://www.sec.gov/Archives/edgar/data/1318605/000162828024002390/tsla-20231231.htm,data\raw\TSLA\2023.html,2672746
+TSLA,Tesla,2024,2025-01-30,https://www.sec.gov/Archives/edgar/data/1318605/000162828025003063/tsla-20241231.htm,data\raw\TSLA\2024.html,2596459

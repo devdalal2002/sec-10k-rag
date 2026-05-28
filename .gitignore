@@ -15,8 +15,10 @@ venv/
 env/
 .env
 
-# Data — too large for git
-data/raw/
+# Data — too large for git (manifest.csv is tracked)
+data/raw/**/
+data/raw/*.htm
+data/raw/*.html
 data/processed/
 
 # Vector store — regenerate locally
