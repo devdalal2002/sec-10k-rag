@@ -27,7 +27,7 @@ def main():
         coll = client.get_collection(name)
         count = coll.count()
         sample = coll.get(limit=1, include=["embeddings"])
-        dim = len(sample["embeddings"][0]) if sample["embeddings"] else "?"
+        dim = len(sample["embeddings"][0]) if sample["embeddings"] is not None and len(sample["embeddings"]) > 0 else "?"
         print(f"{name:<26} {count:>8,}  {dim:>5}")
 
     total_mb = dir_size_mb(CHROMA_DIR)
