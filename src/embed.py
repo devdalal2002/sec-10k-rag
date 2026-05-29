@@ -1,5 +1,5 @@
 """
-src/embed.py — Embed both chunk sets and load into two Chroma collections.
+src/embed.py - Embed both chunk sets and load into two Chroma collections.
 
 Collections:
   sec_recursive     <- data/chunks/recursive.jsonl
@@ -12,6 +12,7 @@ import json
 import time
 from pathlib import Path
 
+import numpy as np
 import chromadb
 from sentence_transformers import SentenceTransformer
 
@@ -20,7 +21,7 @@ CHROMA_DIR = Path("data/chroma")
 
 MODEL_NAME = "BAAI/bge-small-en-v1.5"
 EMBED_BATCH = 64
-ADD_BATCH = 2000  # max items per Chroma .add() call
+ADD_BATCH = 100  # Chroma max batch size is ~166; use 100 to stay safe
 
 
 def load_jsonl(path: Path) -> list[dict]:
@@ -73,16 +74,23 @@ def embed_and_index(
         for c in chunks
     ]
 
-    print(f"  Embedding ({MODEL_NAME}, batch={EMBED_BATCH})...")
-    t0 = time.time()
-    embeddings = model.encode(
-        texts,
-        batch_size=EMBED_BATCH,
-        show_progress_bar=True,
-        normalize_embeddings=True,
-    )
-    embed_secs = time.time() - t0
-    print(f"  Embedding done: {embed_secs:.1f}s ({embed_secs/60:.1f} min)")
+    cache_path = CHROMA_DIR / f"{name}_embeddings.npy"
+    if cache_path.exists():
+        print(f"  Loading cached embeddings from {cache_path.name}")
+        embeddings = np.load(str(cache_path))
+    else:
+        print(f"  Embedding ({MODEL_NAME}, batch={EMBED_BATCH})...")
+        t0 = time.time()
+        embeddings = model.encode(
+            texts,
+            batch_size=EMBED_BATCH,
+            show_progress_bar=True,
+            normalize_embeddings=True,
+        )
+        embed_secs = time.time() - t0
+        print(f"  Embedding done: {embed_secs:.1f}s ({embed_secs/60:.1f} min)")
+        np.save(str(cache_path), embeddings)
+        print(f"  Cached to {cache_path.name}")
 
     print(f"  Indexing into Chroma (batch={ADD_BATCH})...")
     for i in range(0, len(chunks), ADD_BATCH):

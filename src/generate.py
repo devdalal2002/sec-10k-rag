@@ -1,8 +1,8 @@
 """
-src/generate.py — Generation layer: retrieved chunks -> grounded, cited answer.
+src/generate.py - Generation layer: retrieved chunks -> grounded, cited answer.
 
 Uses Ollama with qwen2.5:7b (better numerical grounding than llama3.2:3b).
-Temperature 0.1 — extraction task, not creative writing.
+Temperature 0.1 - extraction task, not creative writing.
 """
 
 import re
@@ -21,12 +21,17 @@ Rules:
 1. Cite the source of every factual claim using [N] notation, where N is the excerpt number.
 2. If multiple excerpts support a claim, cite all of them: [1][3].
 3. Answer only from the provided excerpts. Do not use any prior knowledge.
-4. Be precise with numbers — quote figures directly from the excerpts rather than paraphrasing them.
+4. Be precise with numbers - quote figures directly from the excerpts rather than paraphrasing them.
 5. Do not speculate or infer figures that are not stated explicitly.
-6. If the excerpts contain NO relevant information at all, respond with exactly this single sentence:
-   "The provided filings do not contain this information."
-7. If the excerpts contain PARTIAL information, answer what is supported and explicitly note
-   (in your own words, not the exact refusal phrase) what aspect could not be found.\
+6. Choose EXACTLY ONE of the two response forms below - never both:
+   FORM A (use when ANY excerpt contains relevant information, even partial):
+     Write an answer with [N] citations. If only part of the question can be answered,
+     state what the excerpts support (with citations) and note what is missing in your
+     own words. Do NOT append the refusal phrase from Form B.
+   FORM B (use ONLY when NO excerpt contains any relevant information at all):
+     Respond with exactly this single sentence and nothing else:
+     "The provided filings do not contain this information."
+     Do NOT use Form B if your response already includes any [N] citations.\
 """
 
 
@@ -62,13 +67,13 @@ def generate_answer(
     Generate a grounded, cited answer from retrieved chunks.
 
     Returns:
-      answer          — model response text
-      citations       — list of {chunk_id, ticker, fiscal_year, section_id}
+      answer          - model response text
+      citations       - list of {chunk_id, ticker, fiscal_year, section_id}
                         for each chunk actually cited (validated against range)
-      hallucinated_citations — indices the model cited that were out of range
-      model           — model name used
-      num_chunks_used — how many chunks were passed in
-      generation_ms   — wall-clock time for the Ollama call
+      hallucinated_citations - indices the model cited that were out of range
+      model           - model name used
+      num_chunks_used - how many chunks were passed in
+      generation_ms   - wall-clock time for the Ollama call
     """
     context = _build_context(chunks)
     user_message = f"Question: {query}\n\nExcerpts:\n{context}\n\nAnswer:"

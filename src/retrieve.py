@@ -1,17 +1,18 @@
 """
-src/retrieve.py — Four retrieval configurations over SEC 10-K Chroma collections.
+src/retrieve.py - Four retrieval configurations over SEC 10-K Chroma collections.
 
 Configs:
-  dense                — bi-encoder cosine search only
-  hybrid               — BM25 + dense, fused with RRF (k=60)
-  hybrid_rerank        — hybrid candidates -> CrossEncoder rerank -> top-5
-  hybrid_rerank_filter — hybrid_rerank with metadata pre-filter when
+  dense                - bi-encoder cosine search only
+  hybrid               - BM25 + dense, fused with RRF (k=60)
+  hybrid_rerank        - hybrid candidates -> CrossEncoder rerank -> top-5
+  hybrid_rerank_filter - hybrid_rerank with metadata pre-filter when
                          query names a company and/or fiscal year
 
 Entry point:
   retrieve(query, collection, config, top_k=5) -> list[dict]
 """
 
+import hashlib
 import json
 import re
 import string
@@ -57,11 +58,36 @@ COMPANY_MAP = {
 YEAR_RE = re.compile(r"\b(20(?:22|23|24))\b")
 
 # ---------------------------------------------------------------------------
-# Module-level lazy cache — loaded once, reused across calls
+# Module-level lazy cache - loaded once, reused across calls
 # ---------------------------------------------------------------------------
 _embedder: Optional[SentenceTransformer] = None
 _reranker: Optional[CrossEncoder] = None
 _collection_indexes: dict = {}
+
+# Reranker score cache: keyed by "query_hash|chunk_id" -> float score
+# Persisted to disk so eval re-runs skip recomputation.
+_rerank_cache: dict = {}
+_rerank_cache_path: Optional[Path] = None
+
+
+def load_rerank_cache(path: Path) -> None:
+    global _rerank_cache, _rerank_cache_path
+    _rerank_cache_path = path
+    if path.exists():
+        with open(path, encoding="utf-8") as f:
+            _rerank_cache = json.load(f)
+    else:
+        _rerank_cache = {}
+
+
+def save_rerank_cache() -> None:
+    if _rerank_cache_path is not None:
+        with open(_rerank_cache_path, "w", encoding="utf-8") as f:
+            json.dump(_rerank_cache, f)
+
+
+def _query_hash(query: str) -> str:
+    return hashlib.md5(query.encode()).hexdigest()[:16]
 
 
 def _get_embedder() -> SentenceTransformer:
@@ -255,6 +281,11 @@ def _get_index(collection: str) -> _CollectionIndex:
     return _collection_indexes[collection]
 
 
+def get_chunk(collection: str, chunk_id: str) -> dict:
+    """Fetch a single chunk by ID without running retrieval."""
+    return _get_index(collection).get_chunk(chunk_id)
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
@@ -321,16 +352,27 @@ def retrieve(
     candidate_ids = sorted(fused, key=lambda cid: fused[cid], reverse=True)[:pool]
 
     reranker = _get_reranker()
-    pairs = [(query, index.get_chunk(cid)["text"]) for cid in candidate_ids]
+    qhash = _query_hash(query)
 
-    t0 = time.perf_counter()
-    rerank_scores = reranker.predict(pairs)
-    rerank_ms = (time.perf_counter() - t0) * 1000
+    # Check cache first; only call reranker for uncached pairs.
+    uncached_ids = [cid for cid in candidate_ids
+                    if f"{qhash}|{cid}" not in _rerank_cache]
+    if uncached_ids:
+        pairs = [(query, index.get_chunk(cid)["text"]) for cid in uncached_ids]
+        t0 = time.perf_counter()
+        scores = reranker.predict(pairs)
+        rerank_ms = (time.perf_counter() - t0) * 1000
+        for cid, score in zip(uncached_ids, scores):
+            _rerank_cache[f"{qhash}|{cid}"] = float(score)
+    else:
+        rerank_ms = 0.0
+
+    rerank_scores = [_rerank_cache[f"{qhash}|{cid}"] for cid in candidate_ids]
 
     # Sanity-check: scores must not all be identical
-    if len(set(float(s) for s in rerank_scores)) == 1:
+    if len(set(rerank_scores)) == 1:
         raise RuntimeError(
-            f"Reranker returned identical scores for all {len(pairs)} candidates. "
+            f"Reranker returned identical scores for all {len(candidate_ids)} candidates. "
             "Model may not have loaded correctly."
         )
 
