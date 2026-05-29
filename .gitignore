@@ -46,3 +46,6 @@ secrets.json
 
 rag-starter/
 rag-starter.zip
+
+# Claude Code
+.claude/
