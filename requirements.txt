@@ -1,4 +1,4 @@
-# Core RAG stack — all free, no paid APIs
+# Core RAG stack - all free, no paid APIs
 # Tested on Python 3.10+
 
 # Text extraction

@@ -1,5 +1,5 @@
 """
-src/chunk_report.py — Comparison table for both chunking strategies.
+src/chunk_report.py - Comparison table for both chunking strategies.
 """
 
 import json

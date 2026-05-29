@@ -1,5 +1,5 @@
 """
-src/retrieve_demo.py — Runs 3 test queries x 4 configs x 2 collections.
+src/retrieve_demo.py - Runs 3 test queries x 4 configs x 2 collections.
 
 Prints top-3 per block and reports:
   - Rerank latency across all reranked runs
@@ -17,15 +17,15 @@ SHOW_N = 3
 
 QUERIES = [
     {
-        "label": "Q1 — Single entity + year (filter should help)",
+        "label": "Q1 - Single entity + year (filter should help)",
         "text": "What was Nvidia's data center revenue in fiscal 2024?",
     },
     {
-        "label": "Q2 — Multi-entity (filter must not over-restrict)",
+        "label": "Q2 - Multi-entity (filter must not over-restrict)",
         "text": "Compare R&D spending across Apple, Microsoft, and Google",
     },
     {
-        "label": "Q3 — No entity (should search broadly, hit item_1c/item_1a)",
+        "label": "Q3 - No entity (should search broadly, hit item_1c/item_1a)",
         "text": "What cybersecurity risks are disclosed?",
     },
 ]

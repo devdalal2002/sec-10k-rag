@@ -1,6 +1,6 @@
-# Ground Truth Q&A — Writing Guide
+# Ground Truth Q&A - Writing Guide
 
-This is the most important deliverable in the project. Block 3–4 hours.
+This is the most important deliverable in the project. Block 3-4 hours.
 Do not auto-generate. Do not rush.
 
 ## Why this matters
@@ -12,13 +12,13 @@ cannot demonstrate real competence.
 ## Rules for writing good questions
 
 1. **Each question must have a single, verifiable answer** from the actual filings.
-   "What was Apple's total revenue in fiscal year 2023?" — good.
-   "How is Apple doing?" — bad.
+   "What was Apple's total revenue in fiscal year 2023?" - good.
+   "How is Apple doing?" - bad.
 
 2. **Record the exact source**: company name, section, and page/paragraph.
    You will need this when scoring retrieval correctness.
 
-3. **Cover all 5 companies** — at least 5 questions per company minimum,
+3. **Cover all 5 companies** - at least 5 questions per company minimum,
    but vary by section too.
 
 4. **Cover different question types**:
@@ -27,7 +27,7 @@ cannot demonstrate real competence.
    - Risk factor summary ("What cybersecurity risks does Microsoft disclose?")
    - Multi-hop ("What does Apple cite as the primary risk to its supply chain?")
 
-5. **Include some hard questions** — ones where you expect the baseline to fail.
+5. **Include some hard questions** - ones where you expect the baseline to fail.
    These are where query rewriting will show lift.
 
 ## CSV format
@@ -72,4 +72,4 @@ Aim for: 10 easy, 12 medium, 8 hard.
 2. Save your actual answers to `eval/ground_truth.csv`
 3. Commit it: `git add eval/ground_truth.csv && git commit -m "add 30 ground truth Q&A pairs"`
 
-Do not continue to Days 3–5 until this CSV exists and has 30 rows.
+Do not continue to Days 3-5 until this CSV exists and has 30 rows.

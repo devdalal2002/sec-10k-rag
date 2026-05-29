@@ -65,7 +65,7 @@ def fetch_10k_filings(cik: str) -> list[dict]:
     if not missing_years:
         return filings
 
-    # Paginate — filing pages are ordered newest-first, each covering a date range
+    # Paginate - filing pages are ordered newest-first, each covering a date range
     for page in data["filings"].get("files", []):
         if not missing_years:
             break
@@ -145,7 +145,7 @@ def main():
 
             filing = find_for_year(filings, year)
             if not filing:
-                print(f"  [missing] FY{year} — no 10-K with reportDate in {year}")
+                print(f"  [missing] FY{year} - no 10-K with reportDate in {year}")
                 missing.append(f"{ticker} FY{year}")
                 rows.append({"ticker": ticker, "company_name": company,
                               "fiscal_year": year, "filing_date": "",

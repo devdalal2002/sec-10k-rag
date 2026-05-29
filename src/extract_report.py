@@ -1,5 +1,5 @@
 """
-src/extract_report.py — Print extraction summary table for all 30 filings.
+src/extract_report.py - Print extraction summary table for all 30 filings.
 """
 
 import json

@@ -21,8 +21,10 @@ data/raw/*.htm
 data/raw/*.html
 data/processed/
 
-# Vector store — regenerate locally
-chroma_db/
+# Generated data - regenerate locally
+data/chroma/
+data/chunks/
+data/rerank_cache.json
 
 # Jupyter
 .ipynb_checkpoints/

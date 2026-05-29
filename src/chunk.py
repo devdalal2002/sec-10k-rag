@@ -1,5 +1,5 @@
 """
-src/chunk.py — Two chunking strategies for 10-K filings.
+src/chunk.py - Two chunking strategies for 10-K filings.
 
 Strategy A (recursive): RecursiveCharacterTextSplitter across full filing text.
   Section attribution determined post-hoc by character offset.
@@ -66,7 +66,7 @@ def chunk_recursive(filing: dict) -> list[dict]:
     chunks = []
     search_from = 0
     for idx, text in enumerate(raw_chunks):
-        # Forward scan — amortized O(n) across all chunks
+        # Forward scan - amortized O(n) across all chunks
         chunk_pos = full_text.find(text, search_from)
         if chunk_pos == -1:
             chunk_pos = full_text.find(text)

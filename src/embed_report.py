@@ -1,5 +1,5 @@
 """
-src/embed_report.py — Collection stats and sanity retrieval query.
+src/embed_report.py - Collection stats and sanity retrieval query.
 """
 
 from pathlib import Path

@@ -1,10 +1,10 @@
 """
-src/generate_demo.py — End-to-end: retrieve -> generate -> cited answer.
+src/generate_demo.py - End-to-end: retrieve -> generate -> cited answer.
 
 Three queries:
-  Q1: Answerable, numerical  — Nvidia data center revenue FY2024
-  Q2: Answerable, narrative  — Microsoft cybersecurity disclosures
-  Q3: Refusal test           — Nvidia cryptocurrency mining revenue FY2024
+  Q1: Answerable, numerical  - Nvidia data center revenue FY2024
+  Q2: Answerable, narrative  - Microsoft cybersecurity disclosures
+  Q3: Refusal test           - Nvidia cryptocurrency mining revenue FY2024
                                (should not be in filings; test for hallucination vs refusal)
 """
 
@@ -20,15 +20,15 @@ MODEL       = DEFAULT_MODEL
 
 QUERIES = [
     {
-        "label": "Q1 — Answerable, numerical",
+        "label": "Q1 - Answerable, numerical",
         "query": "What was Nvidia's data center revenue in fiscal 2024?",
     },
     {
-        "label": "Q2 — Answerable, narrative",
+        "label": "Q2 - Answerable, narrative",
         "query": "What cybersecurity risks does Microsoft disclose?",
     },
     {
-        "label": "Q3 — Refusal test (likely not in filings)",
+        "label": "Q3 - Refusal test (likely not in filings)",
         "query": "What was Nvidia's cryptocurrency mining revenue in 2024?",
     },
 ]
@@ -81,13 +81,13 @@ def run() -> None:
 
         if result["hallucinated_citations"]:
             print(f"\n  WARNING: model cited out-of-range indices "
-                  f"{result['hallucinated_citations']} — not in the {TOP_K} chunks passed")
+                  f"{result['hallucinated_citations']} - not in the {TOP_K} chunks passed")
 
         # Q3 explicit refusal check
         if q["label"].startswith("Q3"):
             refusal_phrase = "The provided filings do not contain this information"
             refused = refusal_phrase.lower() in result["answer"].lower()
-            print(f"\n  Refusal check: {'PASSED — model refused to answer' if refused else 'FAILED — model did not use the refusal phrase'}")
+            print(f"\n  Refusal check: {'PASSED - model refused to answer' if refused else 'FAILED - model did not use the refusal phrase'}")
             print(f"  Raw answer quoted below for scrutiny:")
             print(f"  ---")
             for line in result["answer"].splitlines():

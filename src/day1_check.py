@@ -1,5 +1,5 @@
 """
-Day 1 sanity check — run this before anything else.
+Day 1 sanity check - run this before anything else.
 All three checks must pass before you proceed to Day 2.
 
 Usage:
@@ -16,7 +16,7 @@ def check_python_version():
         print(f"  [PASS] Python {major}.{minor}")
         return True
     else:
-        print(f"  [FAIL] Python {major}.{minor} — need 3.10+")
+        print(f"  [FAIL] Python {major}.{minor} - need 3.10+")
         print("         Download from https://python.org")
         return False
 
@@ -87,7 +87,7 @@ def check_ollama():
 
 def main():
     print("=" * 55)
-    print("  SEC 10-K RAG — Day 1 Environment Check")
+    print("  SEC 10-K RAG - Day 1 Environment Check")
     print("=" * 55)
 
     results = [

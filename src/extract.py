@@ -1,5 +1,5 @@
 """
-src/extract.py — Convert 10-K HTML filings to structured JSON.
+src/extract.py - Convert 10-K HTML filings to structured JSON.
 
 Reads:  data/raw/{ticker}/{year}.html
 Writes: data/processed/{ticker}/{year}.json
