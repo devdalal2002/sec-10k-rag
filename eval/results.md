@@ -1,9 +1,8 @@
 # RAG Eval Results
 
-**Run date:** 2026-05-28  |  **Retrieval wall time:** 10.9 min  |  **Regen wall time:** 8.7 min
+**Run date:** 2026-05-28  |  **Wall time:** 10.9 min
 **Questions:** 65 (59 answerable, 6 unanswerable)
 **Headline combo:** sec_section_aware x hybrid_rerank_filter
-**Prompt:** v2 (mutually exclusive refusal/answer rules)
 
 ---
 
