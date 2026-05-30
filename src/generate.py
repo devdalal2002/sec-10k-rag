@@ -6,13 +6,15 @@ Temperature 0.1 - extraction task, not creative writing.
 """
 
 import re
+import sys
 import time
+from pathlib import Path
 from typing import Optional
 
-import ollama
+sys.path.insert(0, str(Path(__file__).parent))
+from config import LLM_MODEL as DEFAULT_MODEL, LLM_TEMPERATURE as TEMPERATURE
 
-DEFAULT_MODEL = "qwen2.5:7b"
-TEMPERATURE = 0.1
+import ollama
 
 SYSTEM_PROMPT = """\
 You are a financial analyst assistant. Answer questions using ONLY the SEC 10-K filing excerpts provided below.

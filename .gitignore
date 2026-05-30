@@ -24,7 +24,7 @@ data/processed/
 # Generated data - regenerate locally
 data/chroma/
 data/chunks/
-data/rerank_cache.json
+data/cache/
 
 # Jupyter
 .ipynb_checkpoints/

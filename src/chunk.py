@@ -11,20 +11,16 @@ Output:
 """
 
 import json
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent))
+from config import (
+    PROCESSED_DIR, CHUNKS_DIR, COMPANIES, YEARS,
+    CHUNK_SIZE, CHUNK_OVERLAP, MIN_SECTION_CHARS, MIN_CHUNK_CHARS,
+)
+
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-PROCESSED_DIR = Path("data/processed")
-CHUNKS_DIR = Path("data/chunks")
-
-COMPANIES = ["AAPL", "MSFT", "NVDA", "META", "GOOGL", "AMZN", "JPM", "GS", "WMT", "TSLA"]
-YEARS = [2022, 2023, 2024]
-
-CHUNK_SIZE = 1000
-CHUNK_OVERLAP = 150
-MIN_SECTION_CHARS = 200
-MIN_CHUNK_CHARS = 100  # below one sentence, no retrievable content
 
 _splitter = RecursiveCharacterTextSplitter(
     chunk_size=CHUNK_SIZE,

@@ -4,7 +4,30 @@ Hybrid retrieval-augmented generation over 30 SEC 10-K annual reports (10 compan
 years, ~22K chunks). Evaluated against a hand-verified 65-question benchmark across 8 retrieval
 configurations.
 
-**100% recall@10 with named-entity metadata filtering.**
+**100% recall@10 with named-entity metadata filtering.** Full results: [eval/results.md](eval/results.md)
+
+## Quickstart
+
+```bash
+git clone https://github.com/devdalal2002/sec-10k-rag
+cd sec-10k-rag
+./scripts/setup.sh                 # venv + pip install + ollama pull
+python src/download_filings.py     # fetch 30 filings from SEC EDGAR
+python src/embed.py                # extract -> chunk -> embed (~10 min)
+python eval/run_eval.py            # 520 retrieval runs + 65 generation runs
+```
+
+To query interactively after building the index:
+
+```python
+from src.retrieve import retrieve
+from src.generate import generate_answer
+
+query  = "What was Apple's revenue in FY2023?"
+chunks = retrieve(query, collection="sec_section_aware", config="hybrid_rerank_filter")
+print(generate_answer(query, chunks)["answer"])
+# -> "Apple reported net sales of $383.3 billion in fiscal year 2023 [1]."
+```
 
 ---
 
@@ -18,7 +41,7 @@ The mechanism: filtering reduces the retrieval problem from "find the right chun
 "find the right chunk among ~300 same-company/year chunks," eliminating the main source of
 false positives before any ranking happens.
 
-### 2. Reranking alone decreases recall@5 (−5 points)
+### 2. Reranking alone decreases recall@5 (-5 points)
 
 Adding bge-reranker-base without metadata filtering dropped recall@5 from 83.1% to 79.7% while
 improving recall@10 from 93.2% to 94.9%. The reranker moved relevant chunks from positions 1-5
@@ -39,11 +62,11 @@ most section edges. Reported as a null result.
 
 ### 4. Generation: 95.7% numerical exact-match with one traced failure
 
-Qwen 2.5 7B achieved 95.7% exact-match on 23 numerical extraction questions (±2% tolerance for
+Qwen 2.5 7B achieved 95.7% exact-match on 23 numerical extraction questions (+-2% tolerance for
 billion/million rounding). The one failure - Goldman Sachs FY2023 net earnings, $952M predicted
 vs $8,520M actual - is a table-row attribution error: retrieval found the correct chunk, but the
 model selected the wrong cell from a dense income statement. This is a model-scale limitation,
-not a retrieval issue.
+not a retrieval issue. Documented in [eval/results.md](eval/results.md).
 
 ---
 
@@ -51,32 +74,32 @@ not a retrieval issue.
 
 ```
 30 SEC 10-K filings (10 companies x FY2022-2024)
-    │
-    ▼
+    |
+    v
 Text extraction + metadata tagging (ticker, fiscal_year, section_id)
-    │
-    ├── Recursive chunker      (1000 tokens, 150 overlap)
-    └── Section-aware chunker  (splits at Item boundaries)
-    │
-    ▼
+    |
+    +-- Recursive chunker      (1000 tokens, 150 overlap)
+    +-- Section-aware chunker  (splits at Item boundaries)
+    |
+    v
 bge-small-en-v1.5 -> ChromaDB (persistent, local)
-    │
-    ▼
-┌─────────────────────────────────────────────────────────────┐
-│  Retrieval configs                                          │
-│                                                             │
-│  dense                vector similarity (cosine), top-5     │
-│  hybrid               BM25 + dense, RRF fusion (k=60)      │
-│  hybrid_rerank        hybrid + bge-reranker-base            │
-│  hybrid_rerank_filter hybrid_rerank + NER metadata filter   │
-│                       (ticker + year extracted by regex)    │
-└─────────────────────────────────────────────────────────────┘
-    │
-    ▼
+    |
+    v
++-------------------------------------------------------------+
+|  Retrieval configs                                          |
+|                                                             |
+|  dense                vector similarity (cosine), top-5    |
+|  hybrid               BM25 + dense, RRF fusion (k=60)     |
+|  hybrid_rerank        hybrid + bge-reranker-base           |
+|  hybrid_rerank_filter hybrid_rerank + NER metadata filter  |
+|                       (ticker + year extracted by regex)   |
++-------------------------------------------------------------+
+    |
+    v
 Qwen 2.5 7B via Ollama (temperature 0.1)
 System prompt enforces mutual exclusion: cited answer OR refusal phrase - never both.
-    │
-    ▼
+    |
+    v
 Cited, grounded answer with [N] source attribution
 ```
 
@@ -136,10 +159,10 @@ Not applied here to keep generation outputs unmodified.
 
 **Table-row attribution failures.** Dense financial tables (30+ numeric cells per page)
 cause row-selection errors in 7B-scale models even when the correct chunk is retrieved.
-The Q20 case is documented; the failure rate is hard to quantify without a larger table-specific
-test set.
+The Q20 case is documented in [eval/results.md](eval/results.md); the failure rate is hard to
+quantify without a larger table-specific test set.
 
-**Reranker domain mismatch.** bge-reranker-base's general-domain training causes a −5 point
+**Reranker domain mismatch.** bge-reranker-base's general-domain training causes a -5 point
 recall@5 regression without the metadata filter. A domain-adapted or larger reranker
 is the most actionable follow-on improvement on retrieval quality.
 
@@ -157,58 +180,6 @@ and is the first experiment I'd run if extending this work. A domain-adapted rer
 
 ---
 
-## Running
-
-**Requirements:** Python 3.10+, [Ollama](https://ollama.com) installed and running, ~4 GB disk.
-
-### 1. Install dependencies
-
-```bash
-python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # Mac/Linux
-pip install -r requirements.txt
-ollama pull qwen2.5:7b
-```
-
-### 2. Download filings
-
-Fetches 30 10-K filings from SEC EDGAR (AAPL, MSFT, NVDA, META, GOOGL, AMZN, JPM, GS, WMT, TSLA
-x FY2022-2024). Edit the ticker/year lists at the top of the file to change the corpus.
-
-```bash
-python src/download_filings.py
-```
-
-### 3. Build the index
-
-Extracts text, chunks into two strategies (recursive + section-aware), embeds with
-bge-small-en-v1.5, and loads both collections into ChromaDB. Takes ~10 min on first run;
-subsequent runs skip recomputation if the embedding cache exists.
-
-```bash
-python src/embed.py
-```
-
-### 4. Query the system
-
-```python
-from src.retrieve import retrieve
-from src.generate import generate_answer
-
-query  = "What was Apple's revenue in FY2023?"
-chunks = retrieve(query, collection="sec_section_aware", config="hybrid_rerank_filter", top_k=5)
-result = generate_answer(query, chunks)
-
-print(result["answer"])
-# -> "Apple reported net sales of $383.3 billion in fiscal year 2023 [1]."
-```
-
-**Collection options:** `sec_recursive`, `sec_section_aware`  
-**Config options:** `dense`, `hybrid`, `hybrid_rerank`, `hybrid_rerank_filter` (recommended)
-
----
-
 ## Corpus
 
 AAPL, MSFT, NVDA, META, GOOGL, AMZN, JPM, GS, WMT, TSLA x FY2022-2024 (30 filings total).
@@ -221,16 +192,34 @@ FY2024 Item 7 is absent. Ground truth questions for those filings source answers
 ## Project Structure
 
 ```
+sec-10k-rag/
 ├── src/
-│   ├── download_filings.py    # Fetches 10-Ks from SEC EDGAR
-│   ├── extract.py             # Text extraction + section tagging
-│   ├── chunk.py               # Recursive and section-aware chunkers
-│   ├── embed.py               # Embedding + ChromaDB ingestion
+│   ├── config.py              # tunable params: model names, chunk size, paths
+│   ├── download_filings.py    # fetch 10-Ks from SEC EDGAR
+│   ├── extract.py             # HTML -> structured JSON with section tags
+│   ├── chunk.py               # recursive + section-aware chunkers
+│   ├── embed.py               # embed chunks -> ChromaDB
 │   ├── retrieve.py            # 4 retrieval configs, RRF fusion, rerank cache
-│   └── generate.py            # Cited answer generation (Qwen 2.5 7B)
+│   └── generate.py            # Qwen 2.5 7B cited answer generation
+├── eval/
+│   ├── ground_truth.csv       # 65 hand-verified Q&A pairs (tracked)
+│   ├── raw_results.jsonl      # per-(question, collection, config) outcomes (tracked)
+│   ├── results.md             # summary tables and findings
+│   └── run_eval.py            # harness: 520 retrieval + 65 generation runs
+├── tests/
+│   ├── test_chunk.py          # section-aware chunks never cross section boundaries
+│   ├── test_retrieve.py       # metadata filter entity parsing and matching
+│   └── test_numerical_match.py
+├── scripts/
+│   ├── setup.sh               # venv + pip + ollama pull
+│   └── run_full_pipeline.sh   # download -> index -> eval in one command
 ├── data/
-│   ├── raw/manifest.csv       # Filing index (ticker, year, accession number)
-│   ├── chunks/                # JSONL chunk files (generated by embed.py)
-│   └── chroma/                # ChromaDB persistent storage (generated by embed.py)
-└── requirements.txt
+│   ├── raw/manifest.csv       # filing index (tracked)
+│   ├── processed/             # generated by extract.py (gitignored)
+│   ├── chunks/                # generated by chunk.py (gitignored)
+│   ├── chroma/                # ChromaDB store (gitignored)
+│   └── cache/                 # rerank score cache (gitignored)
+├── README.md
+├── requirements.txt
+└── LICENSE
 ```

@@ -16,22 +16,21 @@ import hashlib
 import json
 import re
 import string
+import sys
 import time
 from pathlib import Path
 from typing import Optional
+
+sys.path.insert(0, str(Path(__file__).parent))
+from config import (
+    CHROMA_DIR, CHUNKS_DIR, EMBED_MODEL, RERANK_MODEL,
+    RRF_K, CANDIDATE_POOL,
+)
 
 import numpy as np
 import chromadb
 from rank_bm25 import BM25Okapi
 from sentence_transformers import CrossEncoder, SentenceTransformer
-
-CHROMA_DIR = Path("data/chroma")
-CHUNKS_DIR = Path("data/chunks")
-EMBED_MODEL = "BAAI/bge-small-en-v1.5"
-RERANK_MODEL = "BAAI/bge-reranker-base"
-
-RRF_K = 60
-CANDIDATE_POOL = 20  # candidates fed into reranker
 
 COLLECTION_TO_JSONL = {
     "sec_recursive":     CHUNKS_DIR / "recursive.jsonl",

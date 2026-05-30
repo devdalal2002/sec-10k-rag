@@ -9,19 +9,16 @@ Persistence: data/chroma/
 """
 
 import json
+import sys
 import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+from config import CHUNKS_DIR, CHROMA_DIR, EMBED_MODEL as MODEL_NAME, EMBED_BATCH, ADD_BATCH
 
 import numpy as np
 import chromadb
 from sentence_transformers import SentenceTransformer
-
-CHUNKS_DIR = Path("data/chunks")
-CHROMA_DIR = Path("data/chroma")
-
-MODEL_NAME = "BAAI/bge-small-en-v1.5"
-EMBED_BATCH = 64
-ADD_BATCH = 100  # Chroma max batch size is ~166; use 100 to stay safe
 
 
 def load_jsonl(path: Path) -> list[dict]:
