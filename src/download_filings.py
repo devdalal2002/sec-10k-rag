@@ -1,5 +1,5 @@
 """
-Download 10-K filings for 10 companies × 3 fiscal years (2022, 2023, 2024).
+Download 10-K filings for 10 companies x 3 fiscal years (2022, 2023, 2024).
 Saves to data/raw/{ticker}/{fiscal_year}.html and writes data/raw/manifest.csv.
 
 Usage:

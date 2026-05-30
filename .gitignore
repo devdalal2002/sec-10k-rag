@@ -15,7 +15,7 @@ venv/
 env/
 .env
 
-# Data — too large for git (manifest.csv is tracked)
+# Data files - too large for git (manifest.csv is tracked)
 data/raw/**/
 data/raw/*.htm
 data/raw/*.html
@@ -47,5 +47,5 @@ secrets.json
 rag-starter/
 rag-starter.zip
 
-# Claude Code
+# Editor settings
 .claude/
