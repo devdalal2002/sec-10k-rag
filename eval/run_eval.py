@@ -186,8 +186,10 @@ def load_ground_truth() -> list[dict]:
 # Main eval loop
 # ---------------------------------------------------------------------------
 
-def run_eval() -> None:
+def run_eval(sample: Optional[int] = None) -> None:
     gt = load_ground_truth()
+    if sample:
+        gt = gt[:sample]
     load_rerank_cache(RERANK_CACHE)
 
     all_results: list[dict] = []
@@ -609,9 +611,14 @@ def regen_from_jsonl() -> None:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    _sample = None
+    if "--sample" in sys.argv:
+        idx = sys.argv.index("--sample")
+        _sample = int(sys.argv[idx + 1])
+
     if "--recompute" in sys.argv:
         recompute_from_jsonl()
     elif "--regen" in sys.argv:
         regen_from_jsonl()
     else:
-        run_eval()
+        run_eval(sample=_sample)

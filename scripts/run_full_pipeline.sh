@@ -14,7 +14,9 @@ python src/embed.py   # calls extract.py and chunk.py internally via embed pipel
 
 echo ""
 echo "==> [3/4] Running evaluation (65q x 2 collections x 4 configs)..."
-python eval/run_eval.py
+# Pass --sample N for a quick smoke-test, e.g.: ./run_full_pipeline.sh --sample 10
+SAMPLE_ARG=${1:-}
+python eval/run_eval.py $SAMPLE_ARG
 
 echo ""
 echo "==> [4/4] Done. Results written to eval/results.md"

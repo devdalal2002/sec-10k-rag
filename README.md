@@ -1,20 +1,26 @@
 # SEC 10-K RAG System
 
-Hybrid retrieval-augmented generation over 30 SEC 10-K annual reports (10 companies x 3 fiscal
-years, ~22K chunks). Evaluated against a hand-verified 65-question benchmark across 8 retrieval
-configurations.
+Retrieval-augmented generation over 30 SEC 10-K filings (10 companies x FY2022-2024, ~22K chunks),
+evaluated on a hand-verified 65-question benchmark across 8 retrieval configurations.
 
-**100% recall@10 with named-entity metadata filtering.** Full results: [eval/results.md](eval/results.md)
+**94.9% recall@5, 100% recall@10** with named-entity metadata filtering. Full numbers: [eval/results.md](eval/results.md)
+
+**Four findings:**
+- Metadata filtering (ticker + year extracted from query) is the dominant lever: +10-15 pts recall@5
+- Reranking alone *hurts* recall@5 by 5 pts without filtering — cross-encoder domain mismatch
+- Section-aware chunking: null result vs recursive at chunk_size=1000 (tied on all 4 configs)
+- 95.7% numerical exact-match (+-2% tolerance); one traced failure documented in results.md
 
 ## Quickstart
 
 ```bash
 git clone https://github.com/devdalal2002/sec-10k-rag
 cd sec-10k-rag
-./scripts/setup.sh                 # venv + pip install + ollama pull
-python src/download_filings.py     # fetch 30 filings from SEC EDGAR
-python src/embed.py                # extract -> chunk -> embed (~10 min)
-python eval/run_eval.py            # 520 retrieval runs + 65 generation runs
+./scripts/setup.sh                          # venv + pip install + ollama pull
+python src/download_filings.py              # fetch 30 filings from SEC EDGAR
+python src/embed.py                         # extract -> chunk -> embed (~10 min)
+python eval/run_eval.py --sample 10        # quick smoke-test (10 questions)
+python eval/run_eval.py                     # full run: 520 retrieval + 65 generation
 ```
 
 To query interactively after building the index:
