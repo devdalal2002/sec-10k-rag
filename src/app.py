@@ -42,22 +42,29 @@ load_rerank_cache(RERANK_CACHE)
 # no user-facing retrieval controls, this is the one setup the eval says to use.
 # Hosted deploys (Streamlit Cloud, detected via the Groq backend) are memory-constrained
 # and can't reliably fit bge-reranker-base (~1.1GB) alongside everything else, so they
-# drop to "hybrid" (no reranker) instead - local/Ollama runs keep the headline config.
+# drop to "hybrid_filter" - hybrid retrieval + the ticker/year metadata filter (the
+# dominant recall lever per eval/results.md) but no reranker - instead of the full
+# headline config. Local/Ollama runs keep the headline config.
 COLLECTION = "sec_section_aware"
-RETRIEVAL_CONFIG = "hybrid" if LLM_BACKEND == "groq" else "hybrid_rerank_filter"
+RETRIEVAL_CONFIG = "hybrid_filter" if LLM_BACKEND == "groq" else "hybrid_rerank_filter"
 TOP_K = 5
 
 # Curated from eval/ground_truth.csv (hand-verified against the filings) to span
 # question types, plus one out-of-corpus question to demo the refusal behavior.
+# Each was spot-checked end-to-end against the actual hosted config (hybrid_filter,
+# no reranker) - several ground-truth questions that work under the local headline
+# config (hybrid_rerank_filter) don't retrieve cleanly without the reranker on this
+# numeric-table-heavy corpus, so this set is deliberately narrower than "spans every
+# question type" to keep every button reliable.
 EXAMPLE_QUESTIONS = [
     ("Apple FY23 revenue",
      "What were Apple's total net sales in fiscal year 2023?"),
-    ("Amazon vs. Walmart FY23",
-     "Which had higher total revenues in their respective fiscal year 2023: Amazon or Walmart?"),
-    ("Nvidia 3-year trend",
-     "What were Nvidia's total revenues in fiscal years 2022, 2023, and 2024?"),
-    ("Apple competition risks",
-     "What key competition risks does Apple disclose in its fiscal year 2024 10-K?"),
+    ("Google Cloud growth",
+     "By how much did Google Cloud revenue grow from fiscal year 2023 to fiscal year 2024?"),
+    ("Nvidia FY24 revenue",
+     "What was Nvidia's total revenue in fiscal year 2024 (fiscal year ending January 28, 2024)?"),
+    ("Meta privacy risks",
+     "What regulatory risks related to data privacy and content does Meta disclose in its fiscal year 2023 10-K?"),
     ("Out-of-corpus (refusal demo)",
      "How did Microsoft's research and development expense compare to Oracle's R&D spending in fiscal year 2023?"),
 ]
@@ -135,8 +142,10 @@ with info_col:
         if LLM_BACKEND == "groq":
             st.caption("This host rebuilds the retrieval index from precomputed embeddings "
                        "on first use (a few seconds) and skips the cross-encoder reranker to "
-                       "fit free-tier resource limits, so recall is closer to 83% than the "
-                       "94.9% headline number (see eval/results.md).")
+                       "fit free-tier resource limits. It keeps the ticker/year metadata "
+                       "filter (the biggest recall lever per eval/results.md), just without "
+                       "the rerank step, so quality should sit between the 83.1% (hybrid) "
+                       "and 94.9% (hybrid_rerank_filter) recall@5 numbers there.")
 with clear_col:
     if st.button("Clear", use_container_width=True):
         st.session_state.messages = []

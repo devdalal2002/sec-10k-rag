@@ -65,7 +65,10 @@ backend and can't ship the ~300 MB local Chroma index. Both are handled automati
   collection on first query, instead of re-encoding ~21K chunks at runtime - the latter took
   several minutes or more on Streamlit Cloud's shared CPU before this was added. The reranker
   is also skipped on this backend (see below) since `bge-reranker-base` alone is ~1.1 GB,
-  more than the free tier's RAM comfortably allows alongside everything else.
+  more than the free tier's RAM comfortably allows alongside everything else. It keeps the
+  ticker/year metadata filter via a `hybrid_filter` config (hybrid retrieval + filter, no
+  rerank) rather than dropping to plain `hybrid`, since the filter is the bigger recall
+  lever of the two on this corpus.
 - **Dependencies**: Streamlit Cloud installs whichever `requirements.txt` is closest to the
   entrypoint, so `src/requirements.txt` (a lean subset: streamlit, chromadb,
   sentence-transformers, rank-bm25, ollama, groq) is used for the hosted deploy instead of

@@ -17,6 +17,7 @@ import json
 import re
 import string
 import sys
+import threading
 import time
 from pathlib import Path
 from typing import Optional
@@ -62,6 +63,15 @@ YEAR_RE = re.compile(r"\b(20(?:22|23|24))\b")
 _embedder: Optional[SentenceTransformer] = None
 _reranker: Optional[CrossEncoder] = None
 _collection_indexes: dict = {}
+# Guards _collection_indexes: Streamlit serves concurrent sessions as threads
+# in one process, and building a collection is expensive and not idempotent
+# under concurrency (two racing builds can delete-and-recreate the collection
+# out from under each other). Only one thread should ever build a given
+# collection; the rest should wait and reuse the result.
+_index_lock = threading.Lock()
+# Guards first-time construction of _embedder/_reranker: concurrent threads
+# racing to load either model corrupts PyTorch's lazy meta-tensor loading.
+_model_lock = threading.Lock()
 
 # Reranker score cache: keyed by "query_hash|chunk_id" -> float score
 # Persisted to disk so eval re-runs skip recomputation.
@@ -91,15 +101,24 @@ def _query_hash(query: str) -> str:
 
 def _get_embedder() -> SentenceTransformer:
     global _embedder
-    if _embedder is None:
-        _embedder = SentenceTransformer(EMBED_MODEL)
+    if _embedder is not None:
+        return _embedder
+    with _model_lock:
+        if _embedder is None:
+            # Concurrent first-time construction corrupts PyTorch's lazy
+            # meta-tensor -> device loading ("Cannot copy out of meta tensor"),
+            # so only one thread may build this the first time.
+            _embedder = SentenceTransformer(EMBED_MODEL)
     return _embedder
 
 
 def _get_reranker() -> CrossEncoder:
     global _reranker
-    if _reranker is None:
-        _reranker = CrossEncoder(RERANK_MODEL)
+    if _reranker is not None:
+        return _reranker
+    with _model_lock:
+        if _reranker is None:
+            _reranker = CrossEncoder(RERANK_MODEL)
     return _reranker
 
 
@@ -345,8 +364,13 @@ class _CollectionIndex:
 
 
 def _get_index(collection: str) -> _CollectionIndex:
-    if collection not in _collection_indexes:
-        _collection_indexes[collection] = _CollectionIndex(collection)
+    if collection in _collection_indexes:
+        return _collection_indexes[collection]
+    with _index_lock:
+        # Double-checked locking: another thread may have finished building
+        # this collection while we were waiting for the lock.
+        if collection not in _collection_indexes:
+            _collection_indexes[collection] = _CollectionIndex(collection)
     return _collection_indexes[collection]
 
 
@@ -372,7 +396,12 @@ def retrieve(
       chunk_id, text, section_id, ticker, fiscal_year, score,
       retrieval_method, [rerank_latency_ms if reranked]
     """
-    if config not in ("dense", "hybrid", "hybrid_rerank", "hybrid_rerank_filter"):
+    # "hybrid_filter" is not part of the original eval matrix (dense / hybrid /
+    # hybrid_rerank / hybrid_rerank_filter) - it's hybrid + the metadata filter
+    # without the cross-encoder rerank, for hosts where bge-reranker-base's
+    # ~1.1GB doesn't fit but dropping the filter (the dominant recall lever,
+    # see eval/results.md) isn't worth it either.
+    if config not in ("dense", "hybrid", "hybrid_rerank", "hybrid_rerank_filter", "hybrid_filter"):
         raise ValueError(f"Unknown config: {config!r}")
 
     index = _get_index(collection)
@@ -382,7 +411,7 @@ def retrieve(
     query_tokens = _tokenize(query)
 
     tickers, years = _parse_entities(query)
-    where = _build_where(tickers, years) if config == "hybrid_rerank_filter" else None
+    where = _build_where(tickers, years) if config in ("hybrid_rerank_filter", "hybrid_filter") else None
 
     # ------------------------------------------------------------------
     # dense
@@ -394,18 +423,19 @@ def retrieve(
         return results[:top_k]
 
     # ------------------------------------------------------------------
-    # hybrid  (RRF fusion, no rerank, no filter)
+    # hybrid / hybrid_filter  (RRF fusion, no rerank; filter only for hybrid_filter)
     # ------------------------------------------------------------------
-    if config == "hybrid":
+    if config in ("hybrid", "hybrid_filter"):
         pool = max(top_k * 4, CANDIDATE_POOL)
-        dense_hits = index.dense(query_vec, pool)
-        bm25_ids = index.bm25_ranked(query_tokens, pool)
+        dense_hits = index.dense(query_vec, pool, where=where)
+        bm25_ids = index.bm25_ranked(query_tokens, pool, where=where)
 
         dense_ranked_ids = [r["chunk_id"] for r in dense_hits]
         fused = rrf_fuse([dense_ranked_ids, bm25_ids])
 
         top_ids = sorted(fused, key=lambda cid: fused[cid], reverse=True)[:top_k]
-        return [_make_result(index.get_chunk(cid), fused[cid], "hybrid_rrf")
+        method = "hybrid_filter_rrf" if config == "hybrid_filter" else "hybrid_rrf"
+        return [_make_result(index.get_chunk(cid), fused[cid], method)
                 for cid in top_ids]
 
     # ------------------------------------------------------------------
