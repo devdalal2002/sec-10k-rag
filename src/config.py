@@ -2,6 +2,7 @@
 src/config.py - Single source of truth for tunable parameters and paths.
 """
 
+import os
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -46,5 +47,9 @@ DEFAULT_TOP_K  = 5
 # ---------------------------------------------------------------------------
 # Generation
 # ---------------------------------------------------------------------------
+# "ollama" (default, local) or "groq" (hosted deploys without a local LLM server).
+# app.py sets LLM_BACKEND=groq automatically when a GROQ_API_KEY secret is present.
+LLM_BACKEND     = os.environ.get("LLM_BACKEND", "ollama")
 LLM_MODEL       = "qwen2.5:7b"
+GROQ_MODEL      = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 LLM_TEMPERATURE = 0.1

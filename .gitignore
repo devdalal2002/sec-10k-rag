@@ -22,8 +22,9 @@ data/raw/*.html
 data/processed/
 
 # Generated data - regenerate locally
+# data/chunks/ IS tracked: the hosted Streamlit app rebuilds its search index
+# from these JSONL files at runtime since data/chroma/ is too large to ship.
 data/chroma/
-data/chunks/
 data/cache/
 
 # Jupyter
@@ -43,6 +44,7 @@ logs/
 .env
 .env.local
 secrets.json
+.streamlit/secrets.toml
 
 rag-starter/
 rag-starter.zip

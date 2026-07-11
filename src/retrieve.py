@@ -24,7 +24,7 @@ from typing import Optional
 sys.path.insert(0, str(Path(__file__).parent))
 from config import (
     CHROMA_DIR, CHUNKS_DIR, EMBED_MODEL, RERANK_MODEL,
-    RRF_K, CANDIDATE_POOL,
+    RRF_K, CANDIDATE_POOL, EMBED_BATCH, ADD_BATCH,
 )
 
 import numpy as np
@@ -203,9 +203,6 @@ class _CollectionIndex:
     def __init__(self, collection_name: str):
         self.name = collection_name
 
-        chroma_client = chromadb.PersistentClient(path=str(CHROMA_DIR))
-        self.chroma = chroma_client.get_collection(collection_name)
-
         jsonl_path = COLLECTION_TO_JSONL[collection_name]
         self._chunks: dict[str, dict] = {}
         self._id_order: list[str] = []
@@ -222,6 +219,57 @@ class _CollectionIndex:
                 corpus_tokens.append(_tokenize(chunk["text"]))
 
         self.bm25 = BM25Okapi(corpus_tokens)
+        self.chroma = self._load_or_build_chroma(collection_name)
+
+    def _load_or_build_chroma(self, collection_name: str):
+        """
+        Load the persistent Chroma collection built by embed.py. Falls back to
+        building an ephemeral, in-memory collection from the chunk JSONL when
+        no persistent store is present (e.g. a fresh clone / hosted deploy
+        that ships chunks but not the multi-hundred-MB Chroma directory).
+        """
+        try:
+            client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+            return client.get_collection(collection_name)
+        except Exception:
+            pass
+
+        embedder = _get_embedder()
+        client = chromadb.EphemeralClient()
+        collection = client.create_collection(
+            name=collection_name,
+            metadata={"hnsw:space": "cosine"},
+        )
+
+        ids = self._id_order
+        texts = [self._chunks[cid]["text"] for cid in ids]
+        metadatas = [
+            {
+                "ticker":                self._chunks[cid]["ticker"],
+                "fiscal_year":           self._chunks[cid]["fiscal_year"],
+                "filing_date":           self._chunks[cid]["filing_date"],
+                "strategy":              self._chunks[cid]["strategy"],
+                "section_id":            self._chunks[cid]["section_id"],
+                "section_title":         self._chunks[cid]["section_title"],
+                "chunk_id":              self._chunks[cid]["chunk_id"],
+                "char_count":            self._chunks[cid]["char_count"],
+                "chunk_index_in_filing": self._chunks[cid]["chunk_index_in_filing"],
+            }
+            for cid in ids
+        ]
+        embeddings = embedder.encode(
+            texts, batch_size=EMBED_BATCH, normalize_embeddings=True,
+            show_progress_bar=False,
+        )
+
+        for i in range(0, len(ids), ADD_BATCH):
+            collection.add(
+                ids=ids[i:i + ADD_BATCH],
+                embeddings=embeddings[i:i + ADD_BATCH].tolist(),
+                documents=texts[i:i + ADD_BATCH],
+                metadatas=metadatas[i:i + ADD_BATCH],
+            )
+        return collection
 
     # ------------------------------------------------------------------
     # Dense search via Chroma

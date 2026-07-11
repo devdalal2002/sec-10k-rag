@@ -12,9 +12,43 @@ from pathlib import Path
 from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).parent))
-from config import LLM_MODEL as DEFAULT_MODEL, LLM_TEMPERATURE as TEMPERATURE
+from config import (
+    LLM_BACKEND as BACKEND,
+    LLM_MODEL as OLLAMA_MODEL,
+    GROQ_MODEL,
+    LLM_TEMPERATURE as TEMPERATURE,
+)
 
 import ollama
+
+DEFAULT_MODEL = GROQ_MODEL if BACKEND == "groq" else OLLAMA_MODEL
+
+_groq_client = None
+
+
+def _get_groq_client():
+    global _groq_client
+    if _groq_client is None:
+        from groq import Groq
+        _groq_client = Groq()  # reads GROQ_API_KEY from the environment
+    return _groq_client
+
+
+def _chat(model: str, messages: list[dict]) -> str:
+    if BACKEND == "groq":
+        response = _get_groq_client().chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=TEMPERATURE,
+        )
+        return response.choices[0].message.content.strip()
+
+    response = ollama.chat(
+        model=model,
+        messages=messages,
+        options={"temperature": TEMPERATURE},
+    )
+    return response["message"]["content"].strip()
 
 SYSTEM_PROMPT = """\
 You are a financial analyst assistant. Answer questions using ONLY the SEC 10-K filing excerpts provided below.
@@ -81,17 +115,11 @@ def generate_answer(
     user_message = f"Question: {query}\n\nExcerpts:\n{context}\n\nAnswer:"
 
     t0 = time.perf_counter()
-    response = ollama.chat(
-        model=model,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user",   "content": user_message},
-        ],
-        options={"temperature": TEMPERATURE},
-    )
+    answer = _chat(model, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user",   "content": user_message},
+    ])
     generation_ms = (time.perf_counter() - t0) * 1000
-
-    answer = response["message"]["content"].strip()
 
     valid_indices = _parse_citations(answer, len(chunks))
     raw_indices   = sorted(set(

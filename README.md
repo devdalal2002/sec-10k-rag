@@ -35,6 +35,39 @@ print(generate_answer(query, chunks)["answer"])
 # -> "Apple reported net sales of $383.3 billion in fiscal year 2023 [1]."
 ```
 
+## Streamlit UI
+
+A minimal chat UI (`src/app.py`) wraps `retrieve()` + `generate_answer()`, fixed to the
+headline eval config (section-aware chunking, hybrid + rerank + metadata filter, top-5 -
+94.9% recall@5 / 100% recall@10 per [eval/results.md](eval/results.md)). Click the info
+button for corpus/backend details, or use the example-question shortcuts to try it.
+
+```bash
+streamlit run src/app.py
+```
+
+By default it uses the local Ollama backend and the persistent Chroma index built by
+`embed.py`. It falls back to an in-memory index built from `data/chunks/*.jsonl` when
+`data/chroma/` isn't present (e.g. a fresh clone) - see below for hosting it live.
+
+### Deploying to Streamlit Community Cloud
+
+Ollama can't run on Streamlit Cloud, so the hosted app needs a different generation
+backend and can't ship the ~300 MB local Chroma index. Both are handled automatically:
+
+- **Generation**: set a `GROQ_API_KEY` secret (free tier, get one at
+  [console.groq.com/keys](https://console.groq.com/keys)) in the app's Secrets settings.
+  `src/app.py` detects the secret and switches from Ollama/qwen2.5:7b to
+  Groq/llama-3.3-70b-versatile automatically - see `.streamlit/secrets.toml.example`.
+- **Retrieval index**: `data/chunks/*.jsonl` (the chunked filing text, ~41 MB) is tracked in
+  git specifically so the app can embed it into an ephemeral in-memory Chroma collection on
+  first query. This makes the first query of a session slower (~1-2 min to embed ~21K
+  chunks with bge-small on CPU) since there's no persisted vector store to load.
+
+To deploy: push this repo to GitHub, create an app at
+[share.streamlit.io](https://share.streamlit.io) pointing at `src/app.py`, and add the
+`GROQ_API_KEY` secret.
+
 ---
 
 ## Four Findings
@@ -206,7 +239,8 @@ sec-10k-rag/
 │   ├── chunk.py               # recursive + section-aware chunkers
 │   ├── embed.py               # embed chunks -> ChromaDB
 │   ├── retrieve.py            # 4 retrieval configs, RRF fusion, rerank cache
-│   └── generate.py            # Qwen 2.5 7B cited answer generation
+│   ├── generate.py            # cited answer generation (Ollama or Groq)
+│   └── app.py                 # Streamlit chat UI
 ├── eval/
 │   ├── ground_truth.csv       # 65 hand-verified Q&A pairs (tracked)
 │   ├── raw_results.jsonl      # per-(question, collection, config) outcomes (tracked)
