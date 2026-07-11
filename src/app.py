@@ -10,6 +10,7 @@ switches to Groq's free-tier API instead - see README for deploy notes.
 import html
 import os
 import sys
+import traceback
 from pathlib import Path
 
 import streamlit as st
@@ -210,6 +211,11 @@ if prompt:
             answer = result["answer"]
             citations = result["citations"]
         except Exception as exc:
+            # Print the full traceback to server logs - the chat bubble only
+            # shows str(exc), which isn't enough to diagnose intermittent
+            # backend errors after the fact.
+            print("=== retrieve/generate failed ===", file=sys.stderr)
+            traceback.print_exc()
             answer = f"Something went wrong: {exc}"
             citations = []
             chunks = []
