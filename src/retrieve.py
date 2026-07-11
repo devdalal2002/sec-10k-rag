@@ -329,7 +329,12 @@ class _CollectionIndex:
         }
         if where is not None:
             kwargs["where"] = where
-        res = self.chroma.query(**kwargs)
+        # Chroma's ephemeral store is SQLite-backed; concurrent Streamlit sessions
+        # (separate threads sharing this cached collection) querying it at the
+        # same time without coordination can corrupt the connection's state
+        # ("no such table: collections"). Serialize all access, not just builds.
+        with _index_lock:
+            res = self.chroma.query(**kwargs)
         results = []
         for doc, meta, dist in zip(
             res["documents"][0], res["metadatas"][0], res["distances"][0]
