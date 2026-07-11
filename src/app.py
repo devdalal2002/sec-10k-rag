@@ -133,10 +133,10 @@ with info_col:
             f"Retrieval config: **{RETRIEVAL_CONFIG}**"
         )
         if LLM_BACKEND == "groq":
-            st.caption("This host rebuilds the retrieval index in memory and skips the "
-                       "cross-encoder reranker to fit free-tier resource limits, so the "
-                       "first query of a session can take a minute or two and recall is "
-                       "closer to 83% than the 94.9% headline number (see eval/results.md).")
+            st.caption("This host rebuilds the retrieval index from precomputed embeddings "
+                       "on first use (a few seconds) and skips the cross-encoder reranker to "
+                       "fit free-tier resource limits, so recall is closer to 83% than the "
+                       "94.9% headline number (see eval/results.md).")
 with clear_col:
     if st.button("Clear", use_container_width=True):
         st.session_state.messages = []

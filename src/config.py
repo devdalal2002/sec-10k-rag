@@ -20,6 +20,10 @@ CHUNKS_DIR    = DATA_DIR / "chunks"
 CHROMA_DIR    = DATA_DIR / "chroma"
 CACHE_DIR     = DATA_DIR / "cache"
 RERANK_CACHE  = CACHE_DIR / "rerank_cache.json"
+# Precomputed embeddings tracked in git (unlike data/chroma/) so hosted deploys
+# without a persistent Chroma store can load them instead of re-encoding the
+# full corpus at runtime - see retrieve.py's ephemeral-index fallback.
+EMBEDDINGS_DIR = DATA_DIR / "embeddings"
 
 # ---------------------------------------------------------------------------
 # Chunking

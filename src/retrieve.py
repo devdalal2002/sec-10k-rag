@@ -24,7 +24,7 @@ from typing import Optional
 sys.path.insert(0, str(Path(__file__).parent))
 from config import (
     CHROMA_DIR, CHUNKS_DIR, EMBED_MODEL, RERANK_MODEL,
-    RRF_K, CANDIDATE_POOL, EMBED_BATCH, ADD_BATCH,
+    RRF_K, CANDIDATE_POOL, EMBED_BATCH, ADD_BATCH, EMBEDDINGS_DIR,
 )
 
 import numpy as np
@@ -234,7 +234,6 @@ class _CollectionIndex:
         except Exception:
             pass
 
-        embedder = _get_embedder()
         client = chromadb.EphemeralClient()
         try:
             collection = client.create_collection(
@@ -267,10 +266,23 @@ class _CollectionIndex:
             }
             for cid in ids
         ]
-        embeddings = embedder.encode(
-            texts, batch_size=EMBED_BATCH, normalize_embeddings=True,
-            show_progress_bar=False,
-        )
+        precomputed_path = EMBEDDINGS_DIR / f"{collection_name}.npy"
+        if precomputed_path.exists():
+            # Avoids re-encoding the full corpus at runtime - critical on hosted
+            # deploys with no GPU and a shared/throttled CPU, where a live
+            # encode() of ~21K chunks can take several minutes or more.
+            embeddings = np.load(str(precomputed_path))
+            if len(embeddings) != len(ids):
+                raise RuntimeError(
+                    f"Precomputed embeddings at {precomputed_path} have "
+                    f"{len(embeddings)} rows but {collection_name} has {len(ids)} "
+                    "chunks - out of sync, regenerate with embed.py."
+                )
+        else:
+            embeddings = _get_embedder().encode(
+                texts, batch_size=EMBED_BATCH, normalize_embeddings=True,
+                show_progress_bar=False,
+            )
 
         for i in range(0, len(ids), ADD_BATCH):
             collection.add(

@@ -59,10 +59,13 @@ backend and can't ship the ~300 MB local Chroma index. Both are handled automati
   [console.groq.com/keys](https://console.groq.com/keys)) in the app's Secrets settings.
   `src/app.py` detects the secret and switches from Ollama/qwen2.5:7b to
   Groq/llama-3.3-70b-versatile automatically - see `.streamlit/secrets.toml.example`.
-- **Retrieval index**: `data/chunks/*.jsonl` (the chunked filing text, ~41 MB) is tracked in
-  git specifically so the app can embed it into an ephemeral in-memory Chroma collection on
-  first query. This makes the first query of a session slower (~1-2 min to embed ~21K
-  chunks with bge-small on CPU) since there's no persisted vector store to load.
+- **Retrieval index**: `data/chunks/*.jsonl` (the chunked filing text, ~41 MB) and
+  `data/embeddings/sec_section_aware.npy` (precomputed bge-small embeddings, ~31 MB) are both
+  tracked in git so the app can load the array directly into an ephemeral in-memory Chroma
+  collection on first query, instead of re-encoding ~21K chunks at runtime - the latter took
+  several minutes or more on Streamlit Cloud's shared CPU before this was added. The reranker
+  is also skipped on this backend (see below) since `bge-reranker-base` alone is ~1.1 GB,
+  more than the free tier's RAM comfortably allows alongside everything else.
 - **Dependencies**: Streamlit Cloud installs whichever `requirements.txt` is closest to the
   entrypoint, so `src/requirements.txt` (a lean subset: streamlit, chromadb,
   sentence-transformers, rank-bm25, ollama, groq) is used for the hosted deploy instead of
