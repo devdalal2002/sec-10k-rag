@@ -236,10 +236,20 @@ class _CollectionIndex:
 
         embedder = _get_embedder()
         client = chromadb.EphemeralClient()
-        collection = client.create_collection(
-            name=collection_name,
-            metadata={"hnsw:space": "cosine"},
-        )
+        try:
+            collection = client.create_collection(
+                name=collection_name,
+                metadata={"hnsw:space": "cosine"},
+            )
+        except Exception:
+            # Leftover from an earlier build attempt that failed partway through
+            # (e.g. an OOM mid-embed on a memory-constrained host) - the partial
+            # collection can't be trusted, so drop it and rebuild clean.
+            client.delete_collection(collection_name)
+            collection = client.create_collection(
+                name=collection_name,
+                metadata={"hnsw:space": "cosine"},
+            )
 
         ids = self._id_order
         texts = [self._chunks[cid]["text"] for cid in ids]

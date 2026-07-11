@@ -40,8 +40,11 @@ load_rerank_cache(RERANK_CACHE)
 
 # Fixed to the headline config from eval/results.md (94.9% recall@5, 100% recall@10) -
 # no user-facing retrieval controls, this is the one setup the eval says to use.
+# Hosted deploys (Streamlit Cloud, detected via the Groq backend) are memory-constrained
+# and can't reliably fit bge-reranker-base (~1.1GB) alongside everything else, so they
+# drop to "hybrid" (no reranker) instead - local/Ollama runs keep the headline config.
 COLLECTION = "sec_section_aware"
-RETRIEVAL_CONFIG = "hybrid_rerank_filter"
+RETRIEVAL_CONFIG = "hybrid" if LLM_BACKEND == "groq" else "hybrid_rerank_filter"
 TOP_K = 5
 
 # Curated from eval/ground_truth.csv (hand-verified against the filings) to span
@@ -126,11 +129,14 @@ with info_col:
             "Answers are grounded and cited `[N]` against the retrieved excerpts - "
             "see [eval/results.md](https://github.com/devdalal2002/sec-10k-rag/blob/master/eval/results.md) "
             "for the retrieval benchmark behind these defaults.\n\n"
-            f"Generation backend: **{LLM_BACKEND}** ({model_name})"
+            f"Generation backend: **{LLM_BACKEND}** ({model_name})\n\n"
+            f"Retrieval config: **{RETRIEVAL_CONFIG}**"
         )
         if LLM_BACKEND == "groq":
-            st.caption("The retrieval index is rebuilt in memory on this host, so the "
-                       "first query of a session can take a minute or two.")
+            st.caption("This host rebuilds the retrieval index in memory and skips the "
+                       "cross-encoder reranker to fit free-tier resource limits, so the "
+                       "first query of a session can take a minute or two and recall is "
+                       "closer to 83% than the 94.9% headline number (see eval/results.md).")
 with clear_col:
     if st.button("Clear", use_container_width=True):
         st.session_state.messages = []
