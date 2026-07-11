@@ -4,8 +4,14 @@
 # deps (pdfplumber/beautifulsoup4/lxml/langchain*) that src/app.py never imports,
 # several of which lack prebuilt wheels on Streamlit Cloud's current Python version.
 # See the root requirements.txt for the full local dev / ingestion pipeline set.
-
-streamlit==1.38.0
+#
+# streamlit is left unpinned-minimum (not ==1.38.0 like the root file) because
+# 1.38.0 caps its own pillow dependency at <11, and pillow <11 has no prebuilt
+# wheel for the Python version Streamlit Cloud currently runs - its source
+# build fails on missing zlib headers. A newer streamlit resolves a newer,
+# wheel-available pillow instead. The app's own code doesn't depend on any
+# streamlit version-specific behavior beyond what 1.38+ already provides.
+streamlit>=1.38.0
 chromadb==0.5.15
 sentence-transformers==3.1.1
 rank-bm25==0.2.2
