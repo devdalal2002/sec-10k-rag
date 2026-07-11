@@ -1,0 +1,13 @@
+# Runtime dependencies for src/app.py only (retrieve.py + generate.py's import chain).
+# Streamlit Cloud prefers a requirements.txt next to the entrypoint over the repo
+# root one - this keeps the hosted deploy from installing the offline ingestion
+# deps (pdfplumber/beautifulsoup4/lxml/langchain*) that src/app.py never imports,
+# several of which lack prebuilt wheels on Streamlit Cloud's current Python version.
+# See the root requirements.txt for the full local dev / ingestion pipeline set.
+
+streamlit==1.38.0
+chromadb==0.5.15
+sentence-transformers==3.1.1
+rank-bm25==0.2.2
+ollama==0.3.3
+groq==0.11.0

@@ -63,6 +63,14 @@ backend and can't ship the ~300 MB local Chroma index. Both are handled automati
   git specifically so the app can embed it into an ephemeral in-memory Chroma collection on
   first query. This makes the first query of a session slower (~1-2 min to embed ~21K
   chunks with bge-small on CPU) since there's no persisted vector store to load.
+- **Dependencies**: Streamlit Cloud installs whichever `requirements.txt` is closest to the
+  entrypoint, so `src/requirements.txt` (a lean subset: streamlit, chromadb,
+  sentence-transformers, rank-bm25, ollama, groq) is used for the hosted deploy instead of
+  the root `requirements.txt`. The offline ingestion scripts (`extract.py`,
+  `download_filings.py`, `chunk.py`) need `pdfplumber`/`beautifulsoup4`/`lxml`/`langchain*`,
+  but `src/app.py` never imports them - and some of those pins lack prebuilt wheels on
+  Streamlit Cloud's Python version, so keeping them out of the hosted install avoids a
+  build failure.
 
 To deploy: push this repo to GitHub, create an app at
 [share.streamlit.io](https://share.streamlit.io) pointing at `src/app.py`, and add the
