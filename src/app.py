@@ -126,7 +126,7 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 model_name = GROQ_MODEL if LLM_BACKEND == "groq" else LLM_MODEL
 
-title_col, info_col, clear_col = st.columns([7, 1, 1], vertical_alignment="center")
+title_col, info_col = st.columns([8, 1], vertical_alignment="center")
 with title_col:
     st.title("SEC 10-K RAG")
 with info_col:
@@ -147,10 +147,6 @@ with info_col:
                        "filter (the biggest recall lever per eval/results.md), just without "
                        "the rerank step, so quality should sit between the 83.1% (hybrid) "
                        "and 94.9% (hybrid_rerank_filter) recall@5 numbers there.")
-with clear_col:
-    if st.button("Clear", use_container_width=True):
-        st.session_state.messages = []
-        st.rerun()
 
 if "messages" not in st.session_state:
     st.session_state.messages = []

@@ -242,18 +242,26 @@ class _CollectionIndex:
 
     def _load_or_build_chroma(self, collection_name: str):
         """
-        Load the persistent Chroma collection built by embed.py. Falls back to
-        building an ephemeral, in-memory collection from the chunk JSONL when
-        no persistent store is present (e.g. a fresh clone / hosted deploy
-        that ships chunks but not the multi-hundred-MB Chroma directory).
+        Load the persistent Chroma collection built by embed.py, or lazily
+        build one on first access (e.g. a fresh clone / hosted deploy that
+        ships chunks + precomputed embeddings but not the multi-hundred-MB
+        Chroma directory itself).
+
+        Always uses a file-backed PersistentClient, never EphemeralClient.
+        EphemeralClient's in-memory SQLite is scoped per-connection; Streamlit
+        serves concurrent sessions as separate threads in one process, and a
+        different thread reusing this cached collection got handed a fresh,
+        unmigrated in-memory connection by chromadb - producing exactly the
+        "already exists" / "does not exist" / "no such table" errors seen in
+        production. A real file on disk is safely shared across threads.
         """
+        CHROMA_DIR.mkdir(parents=True, exist_ok=True)
+        client = chromadb.PersistentClient(path=str(CHROMA_DIR))
         try:
-            client = chromadb.PersistentClient(path=str(CHROMA_DIR))
             return client.get_collection(collection_name)
         except Exception:
             pass
 
-        client = chromadb.EphemeralClient()
         try:
             collection = client.create_collection(
                 name=collection_name,
